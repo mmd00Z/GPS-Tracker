@@ -1,15 +1,21 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <SoftwareSerial.h>
 #include <TinyGPS++.h>
 
-// Replace with your network credentials
-const char* ssid = "your_SSID";
-const char* password = "your_PASSWORD";
+// import my SSID and Password
+#include "WiFi_config.h" 
 
 // Replace with your server details
-const char* serverName = "http://your_server.com";
-const int serverPort = 80;
-const char* endpoint = "/coordinates";
+const char* serverName = "https://mmd00z-organic-guide-wj6g9676j962rj9-5000.preview.app.github.dev";
+const int serverPort = 5000;
+const char* endpoint = "/save-coordinates";
+
+static const int RXPin = D2, TXPin = D1;
+static const uint32_t GPSBaud = 9600;
+
+// The serial connection to the GPS device
+SoftwareSerial serial2(RXPin, TXPin);
 
 // Create TinyGPS++ object
 TinyGPSPlus gps;
@@ -19,24 +25,26 @@ unsigned long timerInterval = 1000;
 
 void setup() {
   Serial.begin(9600);
+  serial2.begin(GPSBaud);
 
   // Connect to Wi-Fi network
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
 
-  Serial.println("Connected to WiFi");
+  Serial.println("Connecting to WiFi...");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(200);
+    Serial.print(".");
+  }
+  Serial.println("\nConnected to WiFi");
 
   // Start GPS serial communication
-  Serial2.begin(9600);
+  serial2.begin(9600);
 }
 
 void loop() {
   // Wait for GPS data
-  while (Serial2.available() > 0) {
-    gps.encode(Serial2.read());
+  while (serial2.available() > 0) {
+    gps.encode(serial2.read());
   }
 
   // Check if GPS data is valid
